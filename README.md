@@ -107,7 +107,14 @@ Later on, I worked extensively on the MapView. Using Leaflet, I created a red ma
 
 Here are the GIFs showcasing the functionality of the project:
 
+**User Login**
+
 ![ACM Spring 2025 progress](https://github.com/user-attachments/assets/b3c0e172-ac40-4e46-b83b-cd5d303e6e1d)
+
+**Map Screen**
 
 ![ACM Spring 2025 progress 2](https://github.com/user-attachments/assets/09124e10-bf25-44ff-8be6-77846bfdbdcc)
 
+**Full Video Walkthrough**
+
+https://github.com/user-attachments/assets/0f618cbb-883a-42d5-97d0-65e081ef9fdf
