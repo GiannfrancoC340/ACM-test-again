@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { supabase } from '../supabaseClient'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebaseConfig'
 import { useNavigate } from 'react-router-dom'
 import './Auth.css'
 
@@ -16,36 +17,10 @@ export default function Signup() {
     setError(null)
     
     try {
-      // Sign up the user
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          // Data will be immediately available in the session
-          data: {
-            email_confirmed: true
-          }
-        }
-      })
-
-      if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        // Since email verification is disabled, we can directly sign in
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-        
-        if (signInError) {
-          setError(signInError.message)
-        } else {
-          // Redirect to the map page or dashboard
-          navigate('/map')
-        }
-      }
+      await createUserWithEmailAndPassword(auth, email, password)
+      navigate('/map')
     } catch (err) {
-      setError('An unexpected error occurred')
+      setError(err.message)
       console.error(err)
     } finally {
       setLoading(false)
@@ -54,53 +29,53 @@ export default function Signup() {
 
   return (
     <div className="auth-page">
-    <div className="auth-container">
-      <h2>Sign Up</h2>
-      
-      {error && (
-        <div className="error">
-          {error}
-        </div>
-      )}
-      
-      <form onSubmit={handleSignup}>
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input 
-            id="email"
-            type="email" 
-            placeholder="Your email" 
-            value={email}
-            onChange={e => setEmail(e.target.value)} 
-            required
-          />
-        </div>
+      <div className="auth-container">
+        <h2>Sign Up</h2>
         
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input 
-            id="password"
-            type="password" 
-            placeholder="Choose a secure password" 
-            value={password}
-            onChange={e => setPassword(e.target.value)} 
-            required
-          />
-        </div>
+        {error && (
+          <div className="error">
+            {error}
+          </div>
+        )}
         
-        <button 
-          className="btn-primary" 
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Signing up...' : 'Sign Up'}
-        </button>
-      </form>
-      
-      <div className="auth-footer">
-        Already have an account? <a href="/login">Log In</a>
+        <form onSubmit={handleSignup}>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input 
+              id="email"
+              type="email" 
+              placeholder="Your email" 
+              value={email}
+              onChange={e => setEmail(e.target.value)} 
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input 
+              id="password"
+              type="password" 
+              placeholder="Choose a secure password" 
+              value={password}
+              onChange={e => setPassword(e.target.value)} 
+              required
+            />
+          </div>
+          
+          <button 
+            className="btn-primary" 
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Signing up...' : 'Sign Up'}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          Already have an account? <a href="/login">Log In</a>
+        </div>
       </div>
-    </div>
     </div>
   )
 }
