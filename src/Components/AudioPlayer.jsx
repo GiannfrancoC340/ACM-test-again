@@ -21,6 +21,12 @@ export default function AudioPlayer() {
       url: "/audio/recording3.mp3",
       transcript: "/audio/recording3.txt"
     },
+    { 
+    id: 4, 
+    title: "Flight Recording 4 - Hudson", 
+    url: "/audio/hudson.mp3",
+    transcript: "/audio/hudson.txt"
+  },
   ]);
   
   const [currentTrack, setCurrentTrack] = useState(0);

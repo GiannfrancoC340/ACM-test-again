@@ -26,6 +26,11 @@
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
 }
 
 .now-playing-title {
@@ -85,6 +90,7 @@
 /* Controls */
 .controls-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
@@ -99,6 +105,11 @@
   cursor: pointer;
   transition: all 0.3s;
   font-size: 1.5rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .control-btn:hover:not(:disabled) {
@@ -119,6 +130,11 @@
   cursor: pointer;
   transition: all 0.3s;
   font-size: 1.875rem;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .play-pause-btn:hover {
