@@ -1,5 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useEffect, useState, useRef } from 'react'
+import { collection, getDocs, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebaseConfig'
 import L from 'leaflet'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -31,7 +33,7 @@ const redIcon = L.icon({
   popupAnchor: [1, -34]
 });
 
-// Flight data (detailed flight information for modal)
+// Flight data (detailed flight information for modal - this will eventually come from Firebase too)
 const flightData = {
   'flight-1': {
     route: "RDU to BCT",
@@ -452,32 +454,78 @@ function FlightInfoModal({ flightId, onClose }) {
 }
 
 export default function MapView() {
-  const [loading, setLoading] = useState(false)
+  const [flights, setFlights] = useState([]) // Firebase flights for popup list
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [hoveredFlight, setHoveredFlight] = useState(null)
   const [showAllFlights, setShowAllFlights] = useState(false)
   const [selectedFlightId, setSelectedFlightId] = useState(null)
   
-  // Hardcoded Boca Raton Airport data with flight list
+  // Hardcoded Boca Raton Airport location (this stays the same)
   const bocaRatonAirport = {
     lat: 26.3785,
     lng: -80.1077,
     description: "Boca Raton Airport (BCT)",
-    flightCount: 5,
-    flights: [
-      { id: "flight-1", route: "RDU to BCT", time: "2:56 PM" },
-      { id: "flight-2", route: "BCT to MIA", time: "4:30 PM" },
-      { id: "flight-3", route: "BCT to ATL", time: "5:15 PM" },
-      { id: "flight-4", route: "BCT to LGA", time: "6:45 PM" },
-      { id: "flight-5", route: "MCO to BCT", time: "7:30 PM" }
-    ]
   };
+
+  // Hardcoded fallback flights (same format as before)
+  const fallbackFlights = [
+    { flightId: "flight-1", route: "RDU to BCT", time: "2:56 PM" },
+    { flightId: "flight-2", route: "BCT to MIA", time: "4:30 PM" },
+    { flightId: "flight-3", route: "BCT to ATL", time: "5:15 PM" },
+    { flightId: "flight-4", route: "BCT to LGA", time: "6:45 PM" },
+    { flightId: "flight-5", route: "MCO to BCT", time: "7:30 PM" }
+  ];
+
+  // Fetch flights from Firebase (this will eventually be replaced by SDR data)
+  useEffect(() => {
+    async function fetchFlights() {
+      try {
+        const flightsRef = collection(db, 'flights')
+        const snapshot = await getDocs(flightsRef)
+        const firebaseFlights = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        
+        console.log("Fetched Firebase flights:", firebaseFlights)
+        
+        // Validate and transform Firebase data to match expected format
+        const validFlights = firebaseFlights.filter(flight => 
+          flight.route && flight.time && flight.flightId
+        ).map(flight => ({
+          flightId: flight.flightId,
+          route: flight.route,
+          time: flight.time,
+          status: flight.status || "On Time"
+        }))
+        
+        console.log("Valid transformed flights:", validFlights)
+        
+        if (validFlights.length > 0) {
+          setFlights(validFlights)
+        } else {
+          console.log("No valid Firebase flights, using fallback")
+          setFlights(fallbackFlights)
+        }
+        
+      } catch (err) {
+        console.error("Error fetching flights:", err)
+        setFlights(fallbackFlights) // Use fallback on error
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchFlights()
+  }, [])
 
   const handlePopupClose = () => {
     setShowAllFlights(false)
   }
 
   const handleFlightClick = (flightId) => {
+    console.log("Clicked flight:", flightId)
     setSelectedFlightId(flightId)
   }
 
@@ -485,7 +533,7 @@ export default function MapView() {
     setSelectedFlightId(null)
   }
 
-  const initialFlightsToShow = bocaRatonAirport.flights.slice(0, 2)
+  const initialFlightsToShow = flights.slice(0, 2)
   
   if (loading) return <div>Loading map data...</div>
   if (error) return <div>{error}</div>
@@ -502,6 +550,7 @@ export default function MapView() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         
+        {/* Single red marker for Boca Raton Airport */}
         <Marker 
           position={[bocaRatonAirport.lat, bocaRatonAirport.lng]} 
           icon={redIcon}
@@ -510,17 +559,17 @@ export default function MapView() {
             <div className="airport-popup">
               <h3>{bocaRatonAirport.description}</h3>
               <p>A public-use airport serving South Florida</p>
-              <p style={{ fontWeight: 'bold' }}>Number of flights leaving BCT: {bocaRatonAirport.flightCount}</p>
+              <p style={{ fontWeight: 'bold' }}>Number of flights: {flights.length}</p>
               
               <div style={{ marginTop: '10px' }}>
                 <h4>Today's Flights:</h4>
                 <ul className="flights-list">
-                  {(showAllFlights ? bocaRatonAirport.flights : initialFlightsToShow).map((flight) => (
-                    <li key={flight.id}>
+                  {(showAllFlights ? flights : initialFlightsToShow).map((flight) => (
+                    <li key={flight.flightId}>
                       <div 
-                        className={`flight-link ${hoveredFlight === flight.id ? 'hover' : ''}`}
-                        onClick={() => handleFlightClick(flight.id)}
-                        onMouseEnter={() => setHoveredFlight(flight.id)}
+                        className={`flight-link ${hoveredFlight === flight.flightId ? 'hover' : ''}`}
+                        onClick={() => handleFlightClick(flight.flightId)}
+                        onMouseEnter={() => setHoveredFlight(flight.flightId)}
                         onMouseLeave={() => setHoveredFlight(null)}
                       >
                         <div className="flight-item">
@@ -528,7 +577,7 @@ export default function MapView() {
                           <div>
                             <span className="flight-route">{flight.route}</span> - {flight.time}
                             <span className="flight-info-hint">
-                              {hoveredFlight === flight.id ? '→ View flight details' : 'Click for details'}
+                              {hoveredFlight === flight.flightId ? '→ View flight details' : 'Click for details'}
                             </span>
                           </div>
                         </div>
@@ -542,12 +591,12 @@ export default function MapView() {
                 Coordinates: {bocaRatonAirport.lat.toFixed(4)}, {bocaRatonAirport.lng.toFixed(4)}
               </div>
               
-              {!showAllFlights && bocaRatonAirport.flights.length > initialFlightsToShow.length && (
+              {!showAllFlights && flights.length > initialFlightsToShow.length && (
                 <button 
                   className="see-more-button" 
                   onClick={() => setShowAllFlights(true)}
                 >
-                  See All Flights ({bocaRatonAirport.flights.length})
+                  See All Flights ({flights.length})
                 </button>
               )}
               
