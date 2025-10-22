@@ -1,6 +1,5 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useEffect, useState, useRef } from 'react'
-import { supabase } from '../supabaseClient'
 import L from 'leaflet'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
@@ -32,7 +31,7 @@ const redIcon = L.icon({
   popupAnchor: [1, -34]
 });
 
-// Flight data (moved from FlightInfo.jsx)
+// Flight data (detailed flight information for modal)
 const flightData = {
   'flight-1': {
     route: "RDU to BCT",
@@ -453,13 +452,13 @@ function FlightInfoModal({ flightId, onClose }) {
 }
 
 export default function MapView() {
-  const [locations, setLocations] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [hoveredFlight, setHoveredFlight] = useState(null)
   const [showAllFlights, setShowAllFlights] = useState(false)
-  const [selectedFlightId, setSelectedFlightId] = useState(null) // New state for modal
+  const [selectedFlightId, setSelectedFlightId] = useState(null)
   
+  // Hardcoded Boca Raton Airport data with flight list
   const bocaRatonAirport = {
     lat: 26.3785,
     lng: -80.1077,
@@ -473,27 +472,6 @@ export default function MapView() {
       { id: "flight-5", route: "MCO to BCT", time: "7:30 PM" }
     ]
   };
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data, error } = await supabase.from('locations').select('*')
-        if (error) {
-          console.error("Error fetching locations:", error)
-          setError(`Error: ${error.message}`)
-        } else {
-          console.log("Fetched locations:", data)
-          setLocations(data || [])
-        }
-      } catch (err) {
-        console.error("Exception:", err)
-        setError(`Exception: ${err.message}`)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
 
   const handlePopupClose = () => {
     setShowAllFlights(false)
@@ -584,16 +562,6 @@ export default function MapView() {
             </div>
           </Popup>
         </Marker>
-        
-        {locations && locations.length > 0 && locations.map(loc => (
-          <Marker 
-            key={loc.id} 
-            position={[loc.lat, loc.lng]} 
-            icon={redIcon}
-          >
-            <Popup>{loc.description}</Popup>
-          </Marker>
-        ))}
       </MapContainer>
 
       {/* Flight Info Modal */}
