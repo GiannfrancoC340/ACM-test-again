@@ -9,12 +9,61 @@ export default function Signup() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [passwordErrors, setPasswordErrors] = useState([])
   const navigate = useNavigate()
+
+  // Password validation function
+  const validatePassword = (pass) => {
+    const errors = []
+    
+    if (pass.length < 8) {
+      errors.push('At least 8 characters')
+    }
+    
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) {
+      errors.push('At least 1 special character (!@#$%^&*)')
+    }
+    
+    if (!/[A-Z]/.test(pass)) {
+      errors.push('At least 1 uppercase letter')
+    }
+    
+    if (!/[a-z]/.test(pass)) {
+      errors.push('At least 1 lowercase letter')
+    }
+    
+    if (!/[0-9]/.test(pass)) {
+      errors.push('At least 1 number')
+    }
+    
+    return errors
+  }
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value
+    setPassword(newPassword)
+    
+    // Validate password in real-time
+    if (newPassword.length > 0) {
+      const errors = validatePassword(newPassword)
+      setPasswordErrors(errors)
+    } else {
+      setPasswordErrors([])
+    }
+  }
 
   const handleSignup = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    
+    // Check password requirements before submitting
+    const errors = validatePassword(password)
+    if (errors.length > 0) {
+      setError('Password does not meet all requirements')
+      setLoading(false)
+      return
+    }
     
     try {
       await createUserWithEmailAndPassword(auth, email, password)
@@ -58,15 +107,39 @@ export default function Signup() {
               type="password" 
               placeholder="Choose a secure password" 
               value={password}
-              onChange={e => setPassword(e.target.value)} 
+              onChange={handlePasswordChange} 
               required
             />
+            
+            {/* Password Requirements Display */}
+            {password.length > 0 && (
+              <div className="password-requirements">
+                <p className="requirements-title">Password must contain:</p>
+                <ul>
+                  <li className={password.length >= 8 ? 'requirement-met' : 'requirement-unmet'}>
+                    {password.length >= 8 ? '✓' : '○'} At least 8 characters
+                  </li>
+                  <li className={/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'requirement-met' : 'requirement-unmet'}>
+                    {/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : '○'} At least 1 special character (!@#$%^&*)
+                  </li>
+                  <li className={/[A-Z]/.test(password) ? 'requirement-met' : 'requirement-unmet'}>
+                    {/[A-Z]/.test(password) ? '✓' : '○'} At least 1 uppercase letter
+                  </li>
+                  <li className={/[a-z]/.test(password) ? 'requirement-met' : 'requirement-unmet'}>
+                    {/[a-z]/.test(password) ? '✓' : '○'} At least 1 lowercase letter
+                  </li>
+                  <li className={/[0-9]/.test(password) ? 'requirement-met' : 'requirement-unmet'}>
+                    {/[0-9]/.test(password) ? '✓' : '○'} At least 1 number
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
           
           <button 
             className="btn-primary" 
             type="submit"
-            disabled={loading}
+            disabled={loading || passwordErrors.length > 0}
           >
             {loading ? 'Signing up...' : 'Sign Up'}
           </button>
